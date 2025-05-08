@@ -12,11 +12,9 @@ with open(LINKS_CSV, newline="", encoding="utf-8") as f:
     for row in reader:
         mid_str = row["movieId"].strip()
         tid_str = row["tmdbId"].strip()
-        # 如果 tmdbId 为空，就跳过这一行
         if not mid_str or not tid_str:
             continue
 
-        # 此时 safe 转 int
         mid = int(mid_str)
         tid = int(tid_str)
         MOVIE2TMDB[mid] = tid
