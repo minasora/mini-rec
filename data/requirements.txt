@@ -1,0 +1,3 @@
+# pure-Python only; Spark itself comes from wheel in Dockerfile
+pandas==2.2.2
+numpy==1.26.4

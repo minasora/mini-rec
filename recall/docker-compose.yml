@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  recall-api:
+    build: ./recall-api
+    volumes:
+      - ./embeddings:/embeddings:ro
+    environment:
+      REDIS_URL: "redis://redis:6379"
+      EMB_PATH: "/embeddings"
+    depends_on: [redis]
+    ports:
+      - "8000:8000"
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    volumes:
+      - redis-data:/data
+    restart: always
+
+volumes:
+  redis-data:

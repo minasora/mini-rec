@@ -1,0 +1,8 @@
+services:
+  spark-job:
+    build: .
+    volumes:
+      - ./movielens:/app/data   # drop new CSVs without rebuilding
+    environment:
+      - SPARK_LOCAL_DIRS=/tmp  # avoid tmpfs exhaustion on WSL
+    profiles: ["train"]
