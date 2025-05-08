@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM pytorch/pytorch:2.7.0-cpu
 RUN pip install --no-cache-dir fastapi uvicorn[standard] torch==2.7.0 numpy redis
 COPY app /app
 WORKDIR /app
