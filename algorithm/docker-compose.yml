@@ -1,21 +1,14 @@
 services:
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server","--save","","--appendonly","no"]
 
   rec-user-svc:
     build: ./rec-user-svc
     volumes: ["./artifacts:/data:ro"]
-    environment:
-      REDIS_URL: "redis://redis:6379/0"
-    depends_on: [redis]
 
   ranker-svc:
     build: ./ranker-svc
     volumes: ["./artifacts:/data:ro"]
     environment:
       MODEL_PATH: "/data/ranker.pt"
-    depends_on: [redis]
 
   gateway-svc:
     build: ./gateway-svc

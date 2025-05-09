@@ -1,11 +1,8 @@
-
-
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from settings import cfg
 import torch
 import numpy as np
-import redis.asyncio as aioredis
 MODEL_PATH = cfg.model_path
 USER_EMB_PATH = cfg.user_emb
 ITEM_EMB_PATH = cfg.item_emb
@@ -30,40 +27,16 @@ except Exception as e:
     sys.exit(1)
 
 
-_REDIS_POOL = None
-
-async def get_redis_connection():
-    global _REDIS_POOL
-    if not _REDIS_POOL:
-        _REDIS_POOL = await aioredis.from_url(cfg.redis_url, decode_responses=True) # Added decode_responses
-    return _REDIS_POOL
-
-async def user_vec(user_id: int): # Changed user_id to int for consistency
-    """Fetches user vector from UE_MATRIX or Redis cache."""
+async def user_vec(user_id: int): 
+    """Fetches user vector from UE_MATRIX."""
     # Ensure user_id is valid for UE_MATRIX
     if not (isinstance(user_id, int) and 0 <= user_id < UE_MATRIX.shape[0]):
         print(f"Warning: User ID {user_id} is out of bounds for UE_MATRIX (size {UE_MATRIX.shape[0]}). Returning zero vector.")
         return np.zeros(UE_MATRIX.shape[1], dtype=np.float32)
     
-    # Direct lookup if user_id is a valid index for preloaded UE_MATRIX
-    # This part assumes USER_EMB_PATH contains embeddings indexed by original user_id
-    # If user_ids were remapped for training, you'd need a map here.
-    # For simplicity, let's assume direct indexing for now.
-    # The redis cache part seems more for dynamic/non-indexed users.
-    # If all users are in UE_MATRIX, caching might be redundant unless UE_MATRIX is huge.
-    
-    # Simplification: Assuming user_id directly indexes UE_MATRIX
+    # Direct lookup from preloaded UE_MATRIX
+    # This assumes USER_EMB_PATH contains embeddings indexed by original user_id
     return UE_MATRIX[user_id].astype(np.float32)
-
-    # Original Redis logic (can be re-enabled if needed for users not in UE_MATRIX)
-    # r = await get_redis_connection()
-    # cached = await r.get(f"user_emb:{user_id}")
-    # if cached:
-    #     try:
-    #         return np.array(json.loads(cached), dtype="float32")
-    #     except (json.JSONDecodeError, TypeError) as e:
-    #         print(f"Error decoding cached user embedding for {user_id}: {e}")
-    # return np.zeros(UE_MATRIX.shape[1], dtype="float32")
 
 
 async def rank_items_logic(user_id: int, item_ids: list[int], k: int):

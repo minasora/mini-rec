@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 import json
-import redis.asyncio as aioredis
 from settings import cfg # Make sure cfg provides correct model paths
 
 # Ensure model paths are correct, e.g., /app/model.pt or /data/model.pt
@@ -17,27 +16,13 @@ MODEL = torch.jit.load(MODEL_PATH, map_location="cpu").eval()
 UE_MATRIX = torch.load(USER_EMB_PATH).weight.detach().cpu().numpy()
 IE_MATRIX = torch.load(ITEM_EMB_PATH).weight.detach().cpu().numpy()
 
-_REDIS_POOL = None
-
-async def get_redis_connection():
-    global _REDIS_POOL
-    if not _REDIS_POOL:
-        _REDIS_POOL = await aioredis.from_url("redis://redis:6379/0")
-    return _REDIS_POOL
-
-async def user_vec(user_id: str | int):
-    """Fetches user vector from UE_MATRIX or Redis cache."""
+async def user_vec(user_id: int):
+    """Fetches user vector from UE_MATRIX."""
     if isinstance(user_id, int) and 0 <= user_id < len(UE_MATRIX):
         return UE_MATRIX[user_id].astype(np.float32) # Ensure correct dtype
-
-    r = await get_redis_connection()
-    cached = await r.get(f"user_emb:{user_id}")
-    if cached:
-        try:
-            return np.array(json.loads(cached), dtype="float32")
-        except (json.JSONDecodeError, TypeError) as e:
-            print(f"Error decoding cached user embedding for {user_id}: {e}")
-            # Fall through to return zero vector
+    
+    # For invalid or out-of-range user_id, return zero vector
+    print(f"Warning: User ID {user_id} not found in UE_MATRIX. Returning zero vector.")
     return np.zeros(UE_MATRIX.shape[1], dtype="float32") # Return zero vector of correct dimension
 
 async def rank(user_id: int, items: list[int], k: int):
